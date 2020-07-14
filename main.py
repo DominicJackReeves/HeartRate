@@ -31,11 +31,12 @@ if __name__ == "__main__":
         cap.set(cv2.CAP_PROP_POS_FRAMES, frame)
         print(frame)
         ret, image = cap.read()
-        #cv2.imshow("Output", image)
-        #cv2.waitKey(0)
+        # cv2.imshow("Output", image)
+        # cv2.waitKey(0)
         s2_out = face_detection.initiate(image)
         average_list.append(s2_out)
         print(average_list[-1])
     
     np.save("facial_average.npy", average_list)
-    #fourier_transform.heartbeat(fps, int(sample), args["span"])
+    # fourier_transform.heartbeat(fps, int(sample), args["span"])
+

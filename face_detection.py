@@ -85,9 +85,7 @@ def initiate(image):
 
 
 	return average
-	#No longer needed as not outputting the image required. Keeping it in for potential testing purposes of identifying frames.
-	#cv2.imshow("Output", image)
-	#cv2.waitKey(0)
+
 
 
 

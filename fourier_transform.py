@@ -6,8 +6,16 @@ import json
 import scipy.fftpack
 
 def heartbeat(fps, sample, span):
-    step = np.ceil(int(fps)//int(sample)) #number of frames between each frame given in data[]
-    span_frames = round(span*fps/step) #number of data points required to cover a span.
+    
+    if sample == 0:
+        step = np.ceil(int(fps)) #number of frames between each frame given in data[]
+        span_frames = round(span*fps) #number of data points required to cover a span.
+    elif sample > 0:
+        step = np.ceil(int(fps)//int(sample)) #number of frames between each frame given in data[]
+        span_frames = round(span*fps/step)
+    else:
+        span_frames = 10000
+        print("Please input a positive integer for sample rate")
     print(span_frames)
     Tracker = True
     Counter = 1
@@ -35,45 +43,46 @@ def heartbeat(fps, sample, span):
                 data[x] = data[x-1]
     #Actual fourier transform portion of code. We will normalise over the span given with a step of 1 second to approximate a heart rate for that period of time. 
     #The steps are: 1. Normalise span 2. Use ICA to find source signals 3. Apply fourier transform to source signals to find appropriate frequencies.
-    tempData = []
-    ica = FastICA(n_components=3, max_iter=1000)
+    # ica = FastICA(n_components=3, max_iter=1000)
+    ica = FastICA()
     time = np.linspace(0,span,span_frames)
-    print(int(fps/(np.ceil(int(fps)//int(sample)))))
+    print(int(fps/(np.ceil(step))))
     count = 0
-    data = data[:450]
+    data = data[::int(step)]
     data -= data.mean(axis=0)
     data /= data.std(axis=0)
-    x1 = [row[0] for row in data]
-    #x1 = np.column_stack([x1,time.T[:34]])
-    x2 = [row[1] for row in data]
-    #x2 = np.column_stack([x2,time.T[:34]])
-    x3 = [row[2] for row in data]
-    #x3 = np.column_stack([x3,time.T[:34]])
-    #x3.concatenate(time.T)
-    source = np.c_[x1,x2,x3]
+    source = data
     S_ = ica.fit_transform(source)
     P_ = ica.inverse_transform(S_)
 
     for i in range(3):
-        powerSpec = np.abs(np.fft.fft(S_[:,i]))
-        #print(powerSpec)
-        freqs = np.fft.fftfreq(len(S_[:,i]),1.0/fps)
+        powerSpec = np.abs(np.fft.fft(S_[:,i]))**2
+        # print("Power Spec")
+        # print(powerSpec)
+        freqs = np.fft.fftfreq(span,sample/fps)
+        # freqs = np.fft.fftfreq(len(S_[:,i]),sample/fps)
+        print(freqs)
         #print(freqs)
-        validFreqs = np.where((freqs >= 0.75) & (freqs<= 4))
+        validFreqs = np.where((freqs >= 0.5) & (freqs<= 4))
+        print(validFreqs)
         validPower = powerSpec[validFreqs]
         #print(validPower)
         maxPower = np.argmax(validPower)
-        print(freqs[validFreqs[0][maxPower]])
-        #print('Max Power', maxPower)
+        # print(freqs[validFreqs[0][maxPower]])
+        print('Max Power', maxPower)
         hr = freqs[maxPower]
-        #print(hr)
-    plt.plot(freqs[validFreqs],validPower)
+        print(hr)
+
+
+
+        plt.plot(freqs[validFreqs],powerSpec[validFreqs])
+   
 
 
 
     yf = scipy.fftpack.fft(S_[:,0])
-    xf = np.linspace(0.0, 25.0/2.0, len(data)/2)
-    #plt.plot(xf,2.0/len(data) * np.abs(yf[:len(data)//2]))
+    xf = np.linspace(0, 26//2., int(len(data)/2))
+    # plt.plot(xf,2.0/len(data) * np.abs(yf[:len(data)//2]))
 
 
     fig = plt.figure()
@@ -91,4 +100,4 @@ def heartbeat(fps, sample, span):
     plt.show()
 
 if __name__ == "__main__":
-    heartbeat(15,15,10)
+    heartbeat(25,1,20)
